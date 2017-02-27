@@ -17,8 +17,8 @@ var connection = mysql.createConnection({
 });
 ```
 
-4. In mysql Workbench, import `schema.sql` and `database-seeds.sql` from this repo and run them to upload the db onto your localhost.
-5. From the command-line, 
+5. In mysql Workbench, import `schema.sql` and `database-seeds.sql` from this repo and run them to upload the db onto your localhost.
+6. From the command-line, 
 	* To interact as a customer, run `virtually-customer.js` to make virtually purchases, and follow the prompts on-screen.
 	* To update products and add quantity, as would a manager, run `virtually-manager.js` and follow the prompts on-screen.
 	* To evaluate whole departments and to add new departments, as would a supervisor, run `virtually-supervisor.js` and follow the prompts on-screen.
