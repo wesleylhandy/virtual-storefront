@@ -1,7 +1,8 @@
 const mysql = require("mysql");
 const prompt = require("prompt");
-var colors = require("colors/safe");
+const colors = require("colors/safe");
 const Table = require('cli-table');
+const commons = require('./common-store-functions.js');
 
 var connection = mysql.createConnection({
   host     : 'localhost',
@@ -13,117 +14,119 @@ var connection = mysql.createConnection({
 const storeName = colors.rainbow("Virtually");
 
 var delay;
+
 connection.connect((err)=> {
 	if (err) throw err;
 	
-	logTitle();
+	commons.logTitle();
 
-	delay = setTimeout(openStoreForBusiness, 2500);
+	delay = setTimeout(openStoreForBusiness, 1500);
 	
 });
 
-function logTitle() {
-	console.log("");
-	console.log(colors.red('_________________________________________________________________________________________________________'));
-	console.log("");
-	var tildas = colors.yellow('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
-	var tagline = colors.magenta("All You Ever Wanted");
-	console.log(`${tildas} ${storeName} ${tagline} ${tildas}`);
-	console.log("");
-	console.log(colors.red('_________________________________________________________________________________________________________'));
-	console.log("");
-}
 
 function openStoreForBusiness() {
 
-	queryAllProducts().then((data)=> {
+	//get list of products from the database - returns a promise
+	commons.queryAllProducts().then((data)=> {
 
-		displayProducts(data);
+		//use npm cli-table to display products
+		commons.displayProducts(data);
 
-		prompt.message = storeName;
-		prompt.delimiter = colors.magenta(" -> ");
-		prompt.start();
-
-		prompt.get({
-		    properties: {
-				    id: {
-				    	type: 'integer',
-				      	maximum: parseInt(data[data.length-1].id),
-				        description: colors.yellow("Enter the Id of the Item you want to purchase"),
-				        required: true
-				    },
-				      quantity: {
-				      	type: 'integer',
-				      	minimum: 1,
-				      	description: colors.green("Enter the quantity of the Item for your order"),
-				      	required: true
-				    }
-		    	}
-		  	}, function (err, result) {
-
-			  	let index = parseInt(result.id) -1; //to get index of the data array
-
-			    console.log(colors.cyan(`You said you wanted to purchase: ${result.quantity} unit(s) of ${data[index].item}`));
-			    
-			    var available = parseInt(data[index].quantity);
-
-		    	if (available < parseInt(result.quantity)) {
-
-		    		console.log(colors.underline.red(`I'm sorry, but we are ${storeName} out of stock for this item. Try reducing your order quantity.`));
-
-		    		delay = setTimeout(openStoreForBusiness, 2000); //display items again
-
-		    	} else {
-
-		    		//calculate total purchase price
-		    		let totalPrice = parseInt(result.quantity) * parseFloat(data[index].price);
-
-		    		console.log(colors.underline(`You have just purchased ${result.quantity} unit(s) of ${data[index].item} for $${totalPrice}`));
-		    		
-		    		available-= parseInt(result.quantity);
-
-		    		updateQuanityOfSingleItem(available, result.id).then((res)=>{
-		    			
-		    			delay = setTimeout(openStoreForBusiness, 2000);
-
-		    		}).catch((err)=>{if (err) console.log(err)});
-		    	}
-
-	 	});
+		getCustomerOrder(data);
 
 	}).catch((err)=> {if (err) console.log(err)});
 
 }
 
-function queryAllProducts() {
-	return new Promise((resolve, reject)=> {
-		connection.query("SELECT item_id AS id, product_name AS item, price, stock_quantity AS quantity, department_name AS department FROM products INNER JOIN departments ON products.department_id = departments.department_id WHERE stock_quantity > 0 ORDER BY id", (err,res) => {
-			if (err) {reject(err);} else {resolve(res);}
-		});
-	});
+function getCustomerOrder(data) {
+	//initialize prompt
+	prompt.message = storeName;
+	prompt.delimiter = colors.magenta(" -> ");
+	prompt.start();
+
+	//ask user to select item to purchase
+	prompt.get({
+		properties: {
+		    id: { 
+		    	type: 'integer',
+		    	minimum: 0,
+		      	maximum: parseInt(data[data.length-1].id),
+		        message: colors.yellow("Enter the Id of the Item you want to purchase. (Enter 0 to exit after prompts)"),
+		        warning: 'Must be a valid ID number.',
+		        required: true }, 
+		    quantity: { 
+		    	type: 'integer',
+	      		minimum: 1,
+	      		message: colors.green("Enter the quantity of the Item for your order"),
+	      		warning: 'Must be a number greater than 0.',
+	      		required: true }
+	      	}
+	    }, function (err, result) {
+
+    	if (result.id == 0) {
+
+    		exitStore();
+    	
+    	} else {
+
+		  	var index = result.id -1; //to get index of the data array
+
+		    console.log(colors.cyan(`You said you wanted to purchase: ${result.quantity} unit(s) of ${data[index].item}`));
+		    
+		    //initialize new prompt to customer
+		    prompt.start();
+
+			var property = {
+				name: 'yesno',
+				message: 'Are you sure (y/n)?',
+				validator: /[y]|[n]/,
+				warning: 'Must respond y or n',
+			};
+			//confirm customer purchase
+			prompt.get(property, function (err, confirm) {
+
+				function startAgain() {
+					getCustomerOrder(data);
+				}
+
+			  	//if customer cancels purchase, go back to initial prompt, else perform other checks
+				if (confirm.yesno == 'n') {
+					console.log(colors.underline.green(`OK. Let's start Over.`));
+					delay = setTimeout(startAgain, 1500);
+				} else {
+
+					//set item quantity to variable for comparisons
+				    var available = data[index].quantity;
+
+				    //make sure there is enough quantity of this item. If not, go back to initial prompt.
+			    	if (available < parseInt(result.quantity)) {
+
+			    		console.log(colors.underline.red(`I'm sorry, but we are ${storeName} out of stock for this item. Try reducing your order quantity.`));
+
+			    		delay = setTimeout(startAgain, 1500); //display items again
+
+			    	} else {
+
+			    		//calculate total purchase price, show to customer, reduce quantity and update db
+			    		var totalPrice = parseInt(result.quantity) * parseFloat(data[index].price);
+			    		console.log(colors.underline(`You have just purchased ${result.quantity} unit(s) of ${data[index].item} for $${totalPrice}`));
+			    		available-= parseInt(result.quantity);
+			
+			    		commons.updateQuantityOfSingleItem(available, result.id).then((res)=>{
+
+			    			commons.updateTotalSales(data[index].department_id, totalPrice);
+			    			//after update, call open store for business to update item list
+	  			   			delay = setTimeout(openStoreForBusiness, 2000);
+			    		}).catch((err)=>{if (err) console.log(err)});
+			    	}
+			    }
+		    });
+		}
+ 	});
 }
 
-function displayProducts(data) {
-	var headers = ["Id", "Item", "Price", "Department"];
+function exitStore() {
 
-	// instantiate 
-	var table = new Table({
-	    head: headers,
-	    colWidths: [5, 48, 8, 40]
-	});
-
-	data.forEach((e)=> {
-		let arr = [e.id, e.item, e.price, e.department];
-		table.push(arr);
-	});
-
-	console.log(table.toString());
-}
-
-function updateQuanityOfSingleItem(quantity, id) {
-	return new Promise((resolve, reject)=> {
-		connection.query("UPDATE products SET ? WHERE ? LIMIT 1", [{stock_quantity: quantity}, {item_id: id}], (err,res) => {
-			if (err) {reject(err);} else {resolve(res);}
-		});
-	});
+	connection.destroy();
 }

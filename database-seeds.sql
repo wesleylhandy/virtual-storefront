@@ -15,3 +15,4 @@ INSERT INTO departments (department_name, over_head_costs, total_sales) VALUES (
 INSERT INTO departments (department_name, over_head_costs, total_sales) VALUES ("Books - Fiction - Russian Literature", 1000.00, 2500.00);
 INSERT INTO departments (department_name, over_head_costs, total_sales) VALUES ("Books - Fiction - American Literature", 1200.00, 5122.00);
 INSERT INTO departments (department_name, over_head_costs, total_sales) VALUES ("Books - Fiction - British Literature", 5000.00, 44004.00);
+INSERT INTO departments (department_name, over_head_costs, total_sales) VALUES ("Books - New Releases", 10000.00, 20000.00);
