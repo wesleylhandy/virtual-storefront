@@ -1,6 +1,8 @@
 # virtual-storefront
 Node.js App that creates a command-line storefront built on mysql, prompt, colors, and cli-table npm packages.
 
+[Watch a video demo of this app in action (requires Flash).](https://wesleylhandy.github.io/virtual-storefront/)
+
 ## Installation Instructions
 
 1. Fork this repo and clone the forked repo to your computer.
