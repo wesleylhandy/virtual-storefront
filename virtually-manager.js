@@ -68,6 +68,7 @@ function getManagerAction() {
 
 			case 5 :
 				connection.destroy();
+				commons.exitStore();
 				break;
 		}
 	});

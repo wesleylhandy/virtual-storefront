@@ -93,9 +93,15 @@ function getSingleDepartment(id) {
 	});
 }
 
+function exitStore() {
+
+	connection.destroy();
+}
+
 exports.updateQuantityOfSingleItem = updateQuantityOfSingleItem;
 exports.queryAllProducts = queryAllProducts;
 exports.querySingleProduct = querySingleProduct;
 exports.displayProducts = displayProducts;
 exports.logTitle = logTitle;
 exports.updateTotalSales = updateTotalSales;
+exports.exitStore = exitStore;

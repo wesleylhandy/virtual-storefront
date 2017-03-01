@@ -15,15 +15,9 @@ const storeName = colors.rainbow("Virtually");
 
 var delay;
 
-connection.connect((err)=> {
-	if (err) throw err;
-	
-	commons.logTitle();
-
-	delay = setTimeout(openStoreForBusiness, 1500);
-	
-});
-
+//starting screen	
+commons.logTitle();
+delay = setTimeout(openStoreForBusiness, 1500);
 
 function openStoreForBusiness() {
 
@@ -66,7 +60,7 @@ function getCustomerOrder(data) {
 
     	if (result.id == 0) {
 
-    		exitStore();
+    		commons.exitStore();
     	
     	} else {
 
@@ -127,9 +121,4 @@ function getCustomerOrder(data) {
 			}).catch((err)=>{if (err) console.log(err)});
 		}
  	});
-}
-
-function exitStore() {
-
-	connection.destroy();
 }
