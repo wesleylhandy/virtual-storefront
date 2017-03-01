@@ -55,6 +55,14 @@ function queryAllProducts() {
 	});
 }
 
+function querySingleProduct(id) {
+	return new Promise((resolve, reject)=> {
+		connection.query("SELECT * FROM products WHERE ?", {item_id: id},(err,res) => {
+			if (err) {reject(err);} else {resolve(res);}
+		});
+	});
+}
+
 function updateQuantityOfSingleItem(quantity, id) {
 	return new Promise((resolve, reject)=> {
 		connection.query("UPDATE products SET ? WHERE ? LIMIT 1", [{stock_quantity: quantity}, {item_id: id}], (err,res) => {
@@ -87,6 +95,7 @@ function getSingleDepartment(id) {
 
 exports.updateQuantityOfSingleItem = updateQuantityOfSingleItem;
 exports.queryAllProducts = queryAllProducts;
+exports.querySingleProduct = querySingleProduct;
 exports.displayProducts = displayProducts;
 exports.logTitle = logTitle;
 exports.updateTotalSales = updateTotalSales;

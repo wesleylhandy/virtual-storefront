@@ -70,58 +70,61 @@ function getCustomerOrder(data) {
     	
     	} else {
 
-		  	var index = result.id -1; //to get index of the data array
+		  	commons.querySingleProduct(result.id).then((product)=>{
 
-		    console.log(colors.cyan(`You said you wanted to purchase: ${result.quantity} unit(s) of ${data[index].item}`));
-		    
-		    //initialize new prompt to customer
-		    prompt.start();
+		  		var item = product[0].product_name;
 
-			var property = {
-				name: 'yesno',
-				message: 'Are you sure (y/n)?',
-				validator: /[y]|[n]/,
-				warning: 'Must respond y or n',
-			};
-			//confirm customer purchase
-			prompt.get(property, function (err, confirm) {
+			    console.log(colors.cyan(`You said you wanted to purchase: ${result.quantity} unit(s) of ${item}`));
+			    
+			    //initialize new prompt to customer
+			    prompt.start();
 
-				function startAgain() {
-					getCustomerOrder(data);
-				}
+				var property = {
+					name: 'yesno',
+					message: 'Are you sure (y/n)?',
+					validator: /[y]|[n]/,
+					warning: 'Must respond y or n',
+				};
+				//confirm customer purchase
+				prompt.get(property, function (err, confirm) {
 
-			  	//if customer cancels purchase, go back to initial prompt, else perform other checks
-				if (confirm.yesno == 'n') {
-					console.log(colors.underline.green(`OK. Let's start Over.`));
-					delay = setTimeout(startAgain, 1500);
-				} else {
+					function startAgain() {
+						getCustomerOrder(data);
+					}
 
-					//set item quantity to variable for comparisons
-				    var available = data[index].quantity;
+				  	//if customer cancels purchase, go back to initial prompt, else perform other checks
+					if (confirm.yesno == 'n') {
+						console.log(colors.underline.green(`OK. Let's start Over.`));
+						delay = setTimeout(startAgain, 1500);
+					} else {
 
-				    //make sure there is enough quantity of this item. If not, go back to initial prompt.
-			    	if (available < parseInt(result.quantity)) {
+						//set item quantity to variable for comparisons
+					    var available = product[0].stock_quantity;
 
-			    		console.log(colors.underline.red(`I'm sorry, but we are ${storeName} out of stock for this item. Try reducing your order quantity.`));
+					    //make sure there is enough quantity of this item. If not, go back to initial prompt.
+				    	if (available < parseInt(result.quantity)) {
 
-			    		delay = setTimeout(startAgain, 1500); //display items again
+				    		console.log(colors.underline.red(`I'm sorry, but we are ${storeName} out of stock for this item. Try reducing your order quantity.`));
 
-			    	} else {
+				    		delay = setTimeout(startAgain, 1500); //display items again
 
-			    		//calculate total purchase price, show to customer, reduce quantity and update db
-			    		var totalPrice = parseInt(result.quantity) * parseFloat(data[index].price);
-			    		console.log(colors.underline(`You have just purchased ${result.quantity} unit(s) of ${data[index].item} for $${totalPrice}`));
-			    		available-= parseInt(result.quantity);
-			
-			    		commons.updateQuantityOfSingleItem(available, result.id).then((res)=>{
+				    	} else {
 
-			    			commons.updateTotalSales(data[index].department_id, totalPrice);
-			    			//after update, call open store for business to update item list
-	  			   			delay = setTimeout(openStoreForBusiness, 2000);
-			    		}).catch((err)=>{if (err) console.log(err)});
-			    	}
-			    }
-		    });
+				    		//calculate total purchase price, show to customer, reduce quantity and update db
+				    		var totalPrice = parseInt(result.quantity) * parseFloat(product[0].price);
+				    		console.log(colors.underline(`You have just purchased ${result.quantity} unit(s) of ${item} for $${totalPrice}`));
+				    		available-= parseInt(result.quantity);
+				
+				    		commons.updateQuantityOfSingleItem(available, result.id).then((res)=>{
+
+				    			commons.updateTotalSales(product[0].department_id, totalPrice);
+				    			//after update, call open store for business to update item list
+		  			   			delay = setTimeout(openStoreForBusiness, 2000);
+				    		}).catch((err)=>{if (err) console.log(err)});
+				    	}
+				    }
+			    });
+			}).catch((err)=>{if (err) console.log(err)});
 		}
  	});
 }
